@@ -55,15 +55,3 @@ git -C "${HERMES_HOME:-$HOME/.hermes}/desktop-plugins/model-tab" pull
 ```
 
 Hermes Desktop hot-reloads `plugin.js` automatically when updated on disk.
-
-## Migrating from `bot-models`
-
-This plugin was previously installed under the ID `bot-models` (`desktop-plugins/bot-models/`). Because Hermes Desktop identifies plugins by `id`, keeping both `bot-models` and `model-tab` in `desktop-plugins/` will load **both** plugins and show two **Models** tabs.
-
-To migrate cleanly without double-loading:
-
-1. Move the old `bot-models` directory outside `desktop-plugins/` as a backup. Keep it until you've confirmed the new tab loads.
-2. Install `model-tab` into `${HERMES_HOME:-$HOME/.hermes}/desktop-plugins/model-tab` using the steps above.
-3. Run **⌘K → Reload desktop plugins** (or restart Hermes Desktop) and confirm only **Model Tab** is listed under **Capabilities → Plugins**.
-
-No settings are lost during migration: the plugin stores no local `ctx.storage` state, and all model configuration remains in each profile's `config.yaml`.
