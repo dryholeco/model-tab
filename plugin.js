@@ -12,7 +12,6 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Separator,
   surfaceModelSwitchConfirm,
   useValue
 } from '@hermes/plugin-sdk'
@@ -37,38 +36,75 @@ const REASONING_OPTIONS = [
 ]
 
 const VALID_REASONING_SET = new Set(REASONING_OPTIONS.map(o => o.value))
+const REASONING_SHORT = {
+  default: 'inherit',
+  none: 'none',
+  minimal: 'min',
+  low: 'low',
+  medium: 'med',
+  high: 'high',
+  xhigh: 'xhigh',
+  max: 'max',
+  ultra: 'ultra'
+}
 
 // Disk plugins are not scanned by Tailwind; all colors use Hermes CSS theme variables only.
 const CSS = `
-.hbm-root{display:flex;flex-direction:column;height:100%;min-height:0;color:var(--ui-text-primary);font-size:12px}
-.hbm-header{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:8px 10px;border-bottom:1px solid var(--ui-stroke-tertiary);flex-shrink:0}
+.hbm-root{display:flex;flex-direction:column;height:100%;min-height:0;color:var(--ui-text-primary);font-size:12px;line-height:1.35}
+.hbm-header{display:flex;align-items:center;justify-content:space-between;gap:6px;min-height:38px;padding:5px 7px 5px 9px;border-bottom:1px solid var(--ui-stroke-tertiary);flex-shrink:0}
 .hbm-scroll{flex:1;min-height:0}
-.hbm-list{display:flex;flex-direction:column;gap:4px;padding:8px}
-.hbm-group-hdr{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:6px 4px 2px;font-size:10px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:var(--ui-text-tertiary)}
-.hbm-group-hdr:first-child{padding-top:0}
-.hbm-card{border:1px solid var(--ui-stroke-tertiary);border-radius:6px;background:var(--ui-bg-elevated,var(--ui-bg-chrome));overflow:hidden}
-.hbm-card[data-expanded="true"]{border-color:var(--ui-stroke-secondary)}
-.hbm-row-btn{display:flex;flex-direction:column;gap:4px;width:100%;padding:8px 10px;text-align:left;background:transparent;border:0;cursor:pointer;color:inherit}
-.hbm-row-btn:hover{background:var(--chrome-action-hover)}
-.hbm-row-btn:focus-visible{outline:1px solid var(--ui-accent);outline-offset:-1px}
-.hbm-row-top{display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0}
+.hbm-list{display:flex;flex-direction:column;padding:0 0 8px}
+.hbm-group-hdr{display:flex;align-items:center;justify-content:space-between;gap:6px;min-height:31px;padding:9px 10px 5px;border-bottom:1px solid var(--ui-stroke-tertiary);font-size:9.5px;font-weight:600;letter-spacing:0.055em;text-transform:uppercase;color:var(--ui-text-secondary)}
+.hbm-row{position:relative;min-width:0;border-bottom:1px solid var(--ui-stroke-tertiary);background:transparent}
+.hbm-row:not([data-expanded="true"]):hover{background:var(--chrome-action-hover)}
+.hbm-row[data-current="true"]{background:var(--ui-bg-tertiary);box-shadow:inset 2px 0 0 var(--ui-accent)}
+.hbm-row[data-expanded="true"]{background:var(--ui-bg-elevated,var(--ui-bg-chrome));box-shadow:inset 2px 0 0 var(--ui-accent)}
+.hbm-row-btn{display:flex;flex-direction:column;gap:4px;width:100%;min-width:0;min-height:56px;padding:7px 8px 7px 10px;text-align:left;background:transparent;border:0;border-radius:0;cursor:pointer;color:inherit}
+.hbm-row-btn:hover{background:transparent}
+.hbm-row-btn:focus-visible{outline:2px solid var(--ui-accent);outline-offset:-2px}
+.hbm-row-top{display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0;min-height:18px}
 .hbm-row-name-wrap{display:flex;align-items:center;gap:6px;min-width:0;flex:1}
-.hbm-row-name{font-weight:600;font-size:12px;color:var(--ui-text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.hbm-row-meta{display:flex;flex-direction:column;gap:2px;font-size:11px;color:var(--ui-text-secondary);min-width:0}
-.hbm-mono{font-family:var(--font-mono,monospace);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.hbm-sub-line{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:10.5px;color:var(--ui-text-tertiary);min-width:0}
-.hbm-sub-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-.hbm-error-inline{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:4px 0 0;font-size:11px;color:var(--ui-danger,var(--ui-text-secondary))}
-.hbm-editor{display:flex;flex-direction:column;gap:10px;padding:10px;border-top:1px solid var(--ui-stroke-tertiary);background:var(--ui-bg-chrome)}
-.hbm-field{display:flex;flex-direction:column;gap:4px;min-width:0}
-.hbm-label-row{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.hbm-row-name{font-weight:600;font-size:12.5px;line-height:17px;color:var(--ui-text-primary);min-width:0;overflow-wrap:anywhere}
+.hbm-status-dot{width:6px;height:6px;border-radius:50%;background:var(--ui-accent);flex:none}
+.hbm-status-dot[data-active="true"]{background:transparent;border:1px solid var(--ui-accent);width:5px;height:5px}
+.hbm-row-trailing{display:flex;align-items:center;justify-content:flex-end;gap:4px;flex:none;color:var(--ui-text-secondary)}
+.hbm-reasoning{display:inline-flex;align-items:center;justify-content:center;min-width:25px;height:16px;padding:0 4px;border:1px solid var(--ui-stroke-tertiary);border-radius:4px;background:var(--ui-bg-quinary,var(--ui-bg-chrome));color:var(--ui-text-secondary);font-family:var(--font-mono,monospace);font-size:9px;line-height:14px;white-space:nowrap}
+.hbm-row-body{display:flex;flex-direction:column;gap:3px;min-width:0}
+.hbm-model-line{display:flex;align-items:baseline;gap:6px;min-width:0;min-height:15px}
+.hbm-provider{flex:none;max-width:78px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9.5px;line-height:15px;color:var(--ui-text-secondary)}
+.hbm-model{min-width:0;flex:1;font-family:var(--font-mono,monospace);font-size:10.5px;line-height:15px;color:var(--ui-text-secondary);white-space:normal;overflow-wrap:anywhere;word-break:break-word}
+.hbm-model[data-empty="true"]{font-family:inherit;color:var(--ui-text-secondary)}
+.hbm-fallback-line{display:flex;align-items:flex-start;gap:4px;min-width:0;font-family:var(--font-mono,monospace);font-size:9.5px;line-height:14px;color:var(--ui-text-secondary);overflow-wrap:anywhere;word-break:break-word}
+.hbm-fallback-arrow{flex:none;color:var(--ui-text-quaternary,var(--ui-text-tertiary))}
+.hbm-chevron{width:12px;height:12px;color:var(--ui-text-quaternary,var(--ui-text-tertiary));flex:none}
+.hbm-row:hover .hbm-chevron,.hbm-row-btn:focus-visible .hbm-chevron{color:var(--ui-accent)}
+.hbm-unavailable{margin-top:7px;border-top:1px solid var(--ui-stroke-secondary);border-bottom:1px solid var(--ui-stroke-tertiary)}
+.hbm-unavailable-toggle{display:flex;align-items:center;gap:6px;width:100%;min-height:33px;padding:5px 9px;border:0;background:transparent;color:var(--ui-text-secondary);font:inherit;font-size:10.5px;text-align:left;cursor:pointer}
+.hbm-unavailable-toggle:hover{background:var(--chrome-action-hover);color:var(--ui-text-secondary)}
+.hbm-unavailable-toggle:focus-visible{outline:2px solid var(--ui-accent);outline-offset:-2px}
+.hbm-unavailable-list{border-top:1px solid var(--ui-stroke-tertiary)}
+.hbm-offline-row{display:flex;align-items:center;gap:6px;min-width:0;min-height:34px;padding:4px 7px 4px 10px;border-bottom:1px solid var(--ui-stroke-tertiary);color:var(--ui-text-secondary)}
+.hbm-offline-row:last-child{border-bottom:0}
+.hbm-offline-dot{width:5px;height:5px;border-radius:50%;background:var(--ui-danger,var(--ui-text-tertiary));flex:none}
+.hbm-offline-name{flex:none;max-width:76px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ui-text-secondary);font-size:11px;font-weight:600}
+.hbm-offline-error{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9.5px}
+.hbm-retry{flex:none;width:24px;height:24px;min-height:24px;padding:2px;color:var(--ui-text-secondary)}
+.hbm-editor{display:flex;flex-direction:column;gap:10px;margin:0 6px 8px 8px;padding:10px 9px 11px 10px;border-left:2px solid var(--ui-accent);border-radius:0 0 4px 4px;background:var(--ui-bg-quinary,var(--ui-bg-chrome))}
+.hbm-editor-head{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:22px}
+.hbm-editor-heading{display:flex;flex-direction:column;gap:2px;min-width:0}
+.hbm-editor-title{font-size:10.5px;font-weight:600;color:var(--ui-text-primary)}
+.hbm-catalog-status{font-size:9px;line-height:1.35;color:var(--ui-text-secondary);overflow-wrap:anywhere}
+.hbm-form-section{display:flex;flex-direction:column;gap:7px;padding-top:9px;border-top:1px solid var(--ui-stroke-tertiary)}
+.hbm-section-title{font-size:9.5px;font-weight:600;letter-spacing:0.055em;text-transform:uppercase;color:var(--ui-text-secondary)}
+.hbm-field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.hbm-label-row{display:flex;align-items:center;justify-content:space-between;gap:6px;min-height:16px}
 .hbm-label{font-size:10.5px;font-weight:600;color:var(--ui-text-secondary)}
-.hbm-hint{font-size:10px;color:var(--ui-text-tertiary)}
-.hbm-actions{display:flex;align-items:center;justify-content:flex-end;gap:6px;padding-top:2px}
-.hbm-err-box{display:flex;flex-direction:column;gap:6px;padding:8px;border:1px solid var(--ui-stroke-secondary);border-radius:5px;background:var(--ui-bg-quinary,var(--ui-bg-tertiary));font-size:11px;color:var(--ui-danger,var(--ui-text-primary));word-break:break-word}
-.hbm-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:24px 12px;text-align:center;color:var(--ui-text-tertiary);font-size:11.5px}
-.hbm-badge-sm{font-size:10px;line-height:14px;padding:0 5px;height:16px;flex-shrink:0}
-.hbm-chevron{color:var(--ui-text-tertiary);flex-shrink:0}
+.hbm-hint{font-size:9px;line-height:1.35;color:var(--ui-text-secondary)}
+.hbm-actions{display:flex;align-items:center;justify-content:flex-end;gap:6px;padding-top:8px;border-top:1px solid var(--ui-stroke-tertiary)}
+.hbm-err-box{display:flex;flex-direction:column;gap:6px;padding:8px;border:1px solid var(--ui-stroke-secondary);border-radius:4px;background:var(--ui-bg-tertiary);font-size:10.5px;line-height:1.45;color:var(--ui-danger,var(--ui-text-primary));overflow-wrap:anywhere}
+.hbm-err-box .hbm-actions{padding-top:2px;border-top:0}
+.hbm-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:24px 12px;text-align:center;color:var(--ui-text-secondary);font-size:11px}
+.hbm-badge-sm{font-size:9px;line-height:13px;padding:0 4px;height:15px;flex-shrink:0}
 `
 
 function routeKey(route) {
@@ -84,6 +120,16 @@ function errorText(err) {
   } catch {
     return String(err)
   }
+}
+
+function isMissingProfileError(msg) {
+  const s = String(msg || '').toLowerCase()
+  return (
+    s.includes('does not exist') ||
+    s.includes('not found') ||
+    s.includes('no such profile') ||
+    s.includes('unknown profile')
+  )
 }
 
 function normalizeFallbackEntries(cfg) {
@@ -270,6 +316,7 @@ function ProviderField({
 
 function ProfileRowEditor({
   route,
+  editorId,
   parsed,
   catalog,
   catalogLoading,
@@ -470,22 +517,32 @@ function ProfileRowEditor({
 
   return jsxs('div', {
     className: 'hbm-editor',
+    id: editorId,
     children: [
       jsxs('div', {
-        className: 'hbm-label-row',
+        className: 'hbm-editor-head',
         children: [
-          jsx('span', {
-            className: 'hbm-hint',
-            children: catalogLoading
-              ? 'Loading provider catalog…'
-              : catalogError
-                ? `Catalog unavailable (${catalogError}) — manual entry enabled`
-                : `${providers.length} provider${providers.length === 1 ? '' : 's'} in catalog`
+          jsxs('div', {
+            className: 'hbm-editor-heading',
+            children: [
+              jsx('span', { className: 'hbm-editor-title', children: 'Model settings' }),
+              jsx('span', {
+                className: 'hbm-catalog-status',
+                role: 'status',
+                'aria-live': 'polite',
+                children: catalogLoading
+                  ? 'Loading provider catalog…'
+                  : catalogError
+                    ? `Catalog unavailable (${catalogError}) — manual entry enabled`
+                    : `${providers.length} provider${providers.length === 1 ? '' : 's'} in catalog`
+              })
+            ]
           }),
           jsx(Button, {
             variant: 'ghost',
             size: 'icon-xs',
             title: 'Refresh model catalog',
+            'aria-label': `Refresh model catalog for ${route.targetProfile}`,
             disabled: catalogLoading || saving,
             onClick: onReloadCatalog,
             children: catalogLoading
@@ -495,124 +552,139 @@ function ProfileRowEditor({
         ]
       }),
 
-      jsx(ProviderField, {
-        idPrefix: `hbm-prov-${uid}`,
-        label: 'Provider',
-        value: provider,
-        onChange: setProvider,
-        providers,
-        disabled: saving
-      }),
-
       jsxs('div', {
-        className: 'hbm-field',
+        className: 'hbm-form-section',
         children: [
+          jsx('div', { className: 'hbm-section-title', children: 'Primary' }),
+          jsx(ProviderField, {
+            idPrefix: `hbm-prov-${uid}`,
+            label: 'Provider',
+            value: provider,
+            onChange: setProvider,
+            providers,
+            disabled: saving
+          }),
+
           jsxs('div', {
-            className: 'hbm-label-row',
+            className: 'hbm-field',
             children: [
-              jsx('label', { className: 'hbm-label', htmlFor: `hbm-model-${uid}`, children: 'Default model' }),
-              primaryModels.length > 0 && jsx('span', {
-                className: 'hbm-hint',
-                children: `${primaryModels.length} listed · type any slug`
-              })
-            ]
-          }),
-          jsx(Input, {
-            id: `hbm-model-${uid}`,
-            list: primaryModels.length > 0 ? primaryListId : undefined,
-            value: model,
-            disabled: saving,
-            onChange: e => setModel(e.target.value),
-            placeholder: 'e.g. anthropic/claude-sonnet-4 or openai/gpt-6.2-sol',
-            spellCheck: false,
-            autoComplete: 'off'
-          }),
-          primaryModels.length > 0 && jsx('datalist', {
-            id: primaryListId,
-            children: primaryModels.map(id => jsx('option', { value: id }, id))
-          })
-        ]
-      }),
-
-      jsx(Separator, {}),
-
-      jsx(ProviderField, {
-        idPrefix: `hbm-fb-prov-${uid}`,
-        label: 'Fallback provider',
-        value: fbProvider,
-        onChange: v => {
-          setClearAllFallbacks(false)
-          setFbProvider(v)
-        },
-        providers,
-        placeholder: 'None (optional)',
-        disabled: saving,
-        rightAction: (fbProvider || fbModel || parsed.extraFallbacks.length > 0) && jsx(Button, {
-          variant: 'ghost',
-          size: 'xs',
-          disabled: saving,
-          onClick: () => {
-            setFbProvider('')
-            setFbModel('')
-            setClearAllFallbacks(true)
-          },
-          children: 'Clear'
-        })
-      }),
-
-      jsxs('div', {
-        className: 'hbm-field',
-        children: [
-          jsxs('div', {
-            className: 'hbm-label-row',
-            children: [
-              jsx('label', { className: 'hbm-label', htmlFor: `hbm-fb-model-${uid}`, children: 'Fallback model' }),
-              !clearAllFallbacks && parsed.extraFallbacks.length > 0 && jsx('span', {
-                className: 'hbm-hint',
-                children: `Preserves +${parsed.extraFallbacks.length} extra`
-              })
-            ]
-          }),
-          jsx(Input, {
-            id: `hbm-fb-model-${uid}`,
-            list: fallbackModels.length > 0 ? fallbackListId : undefined,
-            value: fbModel,
-            disabled: saving,
-            onChange: e => {
-              setClearAllFallbacks(false)
-              setFbModel(e.target.value)
-            },
-            placeholder: 'None (optional)',
-            spellCheck: false,
-            autoComplete: 'off'
-          }),
-          fallbackModels.length > 0 && jsx('datalist', {
-            id: fallbackListId,
-            children: fallbackModels.map(id => jsx('option', { value: id }, id))
-          })
-        ]
-      }),
-
-      jsx(Separator, {}),
-
-      jsxs('div', {
-        className: 'hbm-field',
-        children: [
-          jsx('label', { className: 'hbm-label', children: 'Reasoning effort' }),
-          jsxs(Select, {
-            value: reasoning,
-            disabled: saving,
-            onValueChange: setReasoning,
-            children: [
-              jsx(SelectTrigger, {
-                size: 'sm',
-                className: 'w-full',
-                children: jsx(SelectValue, {})
+              jsxs('div', {
+                className: 'hbm-label-row',
+                children: [
+                  jsx('label', { className: 'hbm-label', htmlFor: `hbm-model-${uid}`, children: 'Default model' }),
+                  primaryModels.length > 0 && jsx('span', {
+                    className: 'hbm-hint',
+                    children: `${primaryModels.length} listed · type any slug`
+                  })
+                ]
               }),
-              jsx(SelectContent, {
-                children: REASONING_OPTIONS.map(opt =>
-                  jsx(SelectItem, { value: opt.value, children: opt.label }, opt.value)
-                )
+              jsx(Input, {
+                id: `hbm-model-${uid}`,
+                list: primaryModels.length > 0 ? primaryListId : undefined,
+                value: model,
+                disabled: saving,
+                onChange: e => setModel(e.target.value),
+                placeholder: 'e.g. anthropic/claude-sonnet-4 or openai/gpt-6.2-sol',
+                spellCheck: false,
+                autoComplete: 'off'
+              }),
+              primaryModels.length > 0 && jsx('datalist', {
+                id: primaryListId,
+                children: primaryModels.map(id => jsx('option', { value: id }, id))
+              })
+            ]
+          })
+        ]
+      }),
+
+      jsxs('div', {
+        className: 'hbm-form-section',
+        children: [
+          jsx('div', { className: 'hbm-section-title', children: 'Fallback' }),
+          jsx(ProviderField, {
+            idPrefix: `hbm-fb-prov-${uid}`,
+            label: 'Fallback provider',
+            value: fbProvider,
+            onChange: v => {
+              setClearAllFallbacks(false)
+              setFbProvider(v)
+            },
+            providers,
+            placeholder: 'None (optional)',
+            disabled: saving,
+            rightAction: (fbProvider || fbModel || parsed.extraFallbacks.length > 0) && jsx(Button, {
+              variant: 'ghost',
+              size: 'xs',
+              disabled: saving,
+              onClick: () => {
+                setFbProvider('')
+                setFbModel('')
+                setClearAllFallbacks(true)
+              },
+              children: 'Clear'
+            })
+          }),
+
+          jsxs('div', {
+            className: 'hbm-field',
+            children: [
+              jsxs('div', {
+                className: 'hbm-label-row',
+                children: [
+                  jsx('label', { className: 'hbm-label', htmlFor: `hbm-fb-model-${uid}`, children: 'Fallback model' }),
+                  !clearAllFallbacks && parsed.extraFallbacks.length > 0 && jsx('span', {
+                    className: 'hbm-hint',
+                    children: `Preserves +${parsed.extraFallbacks.length} extra`
+                  })
+                ]
+              }),
+              jsx(Input, {
+                id: `hbm-fb-model-${uid}`,
+                list: fallbackModels.length > 0 ? fallbackListId : undefined,
+                value: fbModel,
+                disabled: saving,
+                onChange: e => {
+                  setClearAllFallbacks(false)
+                  setFbModel(e.target.value)
+                },
+                placeholder: 'None (optional)',
+                spellCheck: false,
+                autoComplete: 'off'
+              }),
+              fallbackModels.length > 0 && jsx('datalist', {
+                id: fallbackListId,
+                children: fallbackModels.map(id => jsx('option', { value: id }, id))
+              })
+            ]
+          })
+        ]
+      }),
+
+      jsxs('div', {
+        className: 'hbm-form-section',
+        children: [
+          jsx('div', { className: 'hbm-section-title', children: 'Reasoning' }),
+          jsxs('div', {
+            className: 'hbm-field',
+            children: [
+              jsx('label', { className: 'hbm-label', htmlFor: `hbm-reasoning-${uid}`, children: 'Reasoning effort' }),
+              jsxs(Select, {
+                value: reasoning,
+                disabled: saving,
+                onValueChange: setReasoning,
+                children: [
+                  jsx(SelectTrigger, {
+                    id: `hbm-reasoning-${uid}`,
+                    size: 'sm',
+                    className: 'w-full',
+                    children: jsx(SelectValue, {})
+                  }),
+                  jsx(SelectContent, {
+                    children: REASONING_OPTIONS.map(opt =>
+                      jsx(SelectItem, { value: opt.value, children: opt.label }, opt.value)
+                    )
+                  })
+                ]
               })
             ]
           })
@@ -621,6 +693,7 @@ function ProfileRowEditor({
 
       saveError && jsxs('div', {
         className: 'hbm-err-box',
+        role: 'alert',
         children: [
           jsx('span', { children: saveError }),
           canForceModel && jsx('div', {
@@ -651,7 +724,7 @@ function ProfileRowEditor({
             size: 'xs',
             disabled: saving,
             onClick: () => void performSave(false),
-            children: saving ? 'Saving…' : 'Save'
+            children: saving ? 'Saving…' : 'Save changes'
           })
         ]
       })
@@ -675,6 +748,7 @@ function ModelsPane() {
   // Map<routeKey, { status: 'loading'|'ready'|'error', data?, error? }>
   const [catalogStates, setCatalogStates] = useState({})
   const [expandedKey, setExpandedKey] = useState(null)
+  const [unavailableGroups, setUnavailableGroups] = useState({})
 
   const mountedRef = useRef(true)
   useEffect(() => {
@@ -699,6 +773,18 @@ function ModelsPane() {
         { spawnPriority: priority }
       )
       if (!mountedRef.current) return
+      if (res && res.ok === false) {
+        const msg = errorText(res.error || 'Profile unavailable')
+        setRowStates(prev => ({
+          ...prev,
+          [key]: {
+            status: isMissingProfileError(msg) ? 'missing' : 'error',
+            parsed: prev[key]?.parsed || null,
+            error: msg
+          }
+        }))
+        return
+      }
       const parsed = parseProfileConfig(res?.config ?? res)
       setRowStates(prev => ({
         ...prev,
@@ -706,9 +792,14 @@ function ModelsPane() {
       }))
     } catch (err) {
       if (!mountedRef.current) return
+      const msg = errorText(err)
       setRowStates(prev => ({
         ...prev,
-        [key]: { status: 'error', parsed: prev[key]?.parsed || null, error: errorText(err) }
+        [key]: {
+          status: isMissingProfileError(msg) ? 'missing' : 'error',
+          parsed: prev[key]?.parsed || null,
+          error: msg
+        }
       }))
     }
   }, [])
@@ -879,31 +970,32 @@ function ModelsPane() {
     const expanded = expandedKey === key
     const cat = catalogStates[key]
 
-    const isFocused =
-      focusedOwner &&
-      focusedOwner.profile === route.targetProfile &&
-      (!focusedOwner.connectionId || focusedOwner.connectionId === route.connectionId)
-    const isActive =
-      !isFocused &&
-      activeProfile === route.targetProfile &&
-      (!currentConnId || route.connectionId === currentConnId)
+    const isFocused = Boolean(
+      focusedOwner
+        ? focusedOwner.profile === route.targetProfile &&
+            (!focusedOwner.connectionId || focusedOwner.connectionId === route.connectionId)
+        : activeProfile === route.targetProfile &&
+            (!currentConnId || route.connectionId === currentConnId)
+    )
 
-    const fallbackSummary = !parsed
-      ? null
-      : parsed.fallbackModel
-        ? `${parsed.fallbackProvider ? `${parsed.fallbackProvider} · ` : ''}${parsed.fallbackModel}${
-            parsed.extraFallbacks.length > 0 ? ` (+${parsed.extraFallbacks.length})` : ''
-          }`
-        : 'None'
+    const fallbackSummary = parsed?.fallbackModel
+      ? `${parsed.fallbackProvider ? `${parsed.fallbackProvider} · ` : ''}${parsed.fallbackModel}${
+          parsed.extraFallbacks.length > 0 ? ` (+${parsed.extraFallbacks.length})` : ''
+        }`
+      : null
+    const editorId = `hbm-editor-${key.replace(/[^a-zA-Z0-9_-]/g, '_')}`
 
     return jsxs('div', {
-      className: 'hbm-card',
+      className: 'hbm-row',
+      'data-profile': route.targetProfile,
       'data-expanded': expanded ? 'true' : 'false',
+      'data-current': isFocused ? 'true' : 'false',
       children: [
         jsxs('button', {
           type: 'button',
           className: 'hbm-row-btn',
           'aria-expanded': expanded,
+          'aria-controls': expanded && parsed ? editorId : undefined,
           onClick: () => handleToggleRow(route),
           children: [
             jsxs('div', {
@@ -912,65 +1004,64 @@ function ModelsPane() {
                 jsxs('div', {
                   className: 'hbm-row-name-wrap',
                   children: [
+                    jsx('span', { className: 'hbm-row-name', children: route.targetProfile }),
+                    isFocused && jsx('span', {
+                      className: 'hbm-status-dot',
+                      role: 'img',
+                      'aria-label': 'Focused profile',
+                      title: 'Focused profile'
+                    })
+                  ]
+                }),
+                jsxs('span', {
+                  className: 'hbm-row-trailing',
+                  children: [
+                    parsed && jsx('span', {
+                      className: 'hbm-reasoning',
+                      title: `Reasoning effort: ${parsed.reasoning}`,
+                      'aria-label': `Reasoning effort: ${parsed.reasoning}`,
+                      children: REASONING_SHORT[parsed.reasoning] || parsed.reasoning
+                    }),
+                    row?.status === 'loading' && jsx(GlyphSpinner, {}),
                     jsx(Codicon, {
                       name: expanded ? 'chevron-down' : 'chevron-right',
                       className: 'hbm-chevron'
-                    }),
-                    jsx('span', { className: 'hbm-row-name', children: route.targetProfile }),
-                    isFocused && jsx(Badge, { variant: 'secondary', className: 'hbm-badge-sm', children: 'Focused' }),
-                    isActive && jsx(Badge, { variant: 'outline', className: 'hbm-badge-sm', children: 'Active' })
-                  ]
-                }),
-                row?.status === 'loading'
-                  ? jsx(GlyphSpinner, {})
-                  : parsed && jsx(Badge, {
-                      variant: 'outline',
-                      className: 'hbm-badge-sm',
-                      title: `Reasoning effort: ${parsed.reasoning}`,
-                      children: parsed.reasoning
-                    })
-              ]
-            }),
-
-            parsed && jsxs('div', {
-              className: 'hbm-row-meta',
-              children: [
-                jsx('div', {
-                  className: 'hbm-mono',
-                  title: parsed.model ? `${parsed.provider || 'auto'} / ${parsed.model}` : 'No model configured',
-                  children: parsed.model
-                    ? `${parsed.provider ? `${parsed.provider} · ` : ''}${parsed.model}`
-                    : 'Unset'
-                }),
-                jsxs('div', {
-                  className: 'hbm-sub-line',
-                  children: [
-                    jsx('span', {
-                      className: 'hbm-sub-text',
-                      title: `Fallback: ${fallbackSummary}`,
-                      children: `Fallback: ${fallbackSummary}`
                     })
                   ]
                 })
               ]
             }),
 
-            row?.status === 'error' && jsxs('div', {
-              className: 'hbm-error-inline',
+            jsxs('div', {
+              className: 'hbm-row-body',
               children: [
-                jsx('span', {
-                  className: 'hbm-sub-text',
-                  title: row.error || 'Unreachable',
-                  children: `Offline: ${row.error || 'Unreachable'}`
+                jsxs('div', {
+                  className: 'hbm-model-line',
+                  children: [
+                    jsx('span', {
+                      className: 'hbm-provider',
+                      title: parsed ? `Provider: ${parsed.provider || 'auto'}` : undefined,
+                      children: parsed ? parsed.provider || 'auto' : ''
+                    }),
+                    jsx('span', {
+                      className: 'hbm-model',
+                      'data-empty': parsed?.model ? 'false' : 'true',
+                      title: parsed?.model ? `${parsed.provider || 'auto'} / ${parsed.model}` : undefined,
+                      children: parsed
+                        ? parsed.model || 'No model configured'
+                        : row?.status === 'loading'
+                          ? 'Loading configuration…'
+                          : 'Configuration unavailable'
+                    })
+                  ]
                 }),
-                jsx(Button, {
-                  variant: 'ghost',
-                  size: 'xs',
-                  onClick: e => {
-                    e.stopPropagation()
-                    void fetchOneProfile(route, 'foreground')
-                  },
-                  children: 'Retry'
+                fallbackSummary && jsxs('div', {
+                  className: 'hbm-fallback-line',
+                  title: `Fallback: ${fallbackSummary}`,
+                  children: [
+                    jsx('span', { className: 'hbm-fallback-arrow', children: '↳' }),
+                    jsx('span', { children: fallbackSummary })
+                  ]
                 })
               ]
             })
@@ -979,6 +1070,7 @@ function ModelsPane() {
 
         expanded && parsed && jsx(ProfileRowEditor, {
           route,
+          editorId,
           parsed,
           catalog: cat?.data || null,
           catalogLoading: cat?.status === 'loading',
@@ -992,6 +1084,88 @@ function ModelsPane() {
         }, `${key}:${parsed.provider}:${parsed.model}:${parsed.fallbackProvider}:${parsed.fallbackModel}:${parsed.reasoning}`)
       ]
     }, key)
+  }
+
+  const renderOfflineRow = route => {
+    const key = routeKey(route)
+    const row = rowStates[key]
+    const message = row?.error || 'Unreachable'
+    return jsxs('div', {
+      className: 'hbm-offline-row',
+      'data-profile': route.targetProfile,
+      role: 'alert',
+      children: [
+        jsx('span', { className: 'hbm-offline-dot', 'aria-hidden': 'true' }),
+        jsx('span', { className: 'hbm-offline-name', children: route.targetProfile }),
+        jsx('span', {
+          className: 'hbm-offline-error',
+          title: message,
+          children: message
+        }),
+        jsx(Button, {
+          variant: 'ghost',
+          size: 'icon-xs',
+          className: 'hbm-retry',
+          title: `Retry ${route.targetProfile}`,
+          'aria-label': `Retry ${route.targetProfile}`,
+          onClick: () => void fetchOneProfile(route, 'foreground'),
+          children: jsx(Codicon, { name: 'refresh' })
+        })
+      ]
+    }, key)
+  }
+
+  const renderGroup = group => {
+    const visible = group.items.filter(route => rowStates[routeKey(route)]?.status !== 'missing')
+    const online = visible.filter(route => rowStates[routeKey(route)]?.status !== 'error')
+    const unavailable = visible.filter(route => rowStates[routeKey(route)]?.status === 'error')
+    if (visible.length === 0) return null
+    const unavailableOpen = Boolean(unavailableGroups[group.connectionId])
+    const unavailableId = `hbm-unavailable-${String(group.connectionId).replace(/[^a-zA-Z0-9_-]/g, '_')}`
+
+    return jsxs(Fragment, {
+      children: [
+        group.label && jsxs('div', {
+          className: 'hbm-group-hdr',
+          children: [
+            jsx('span', { children: group.label }),
+            group.isCurrent && jsx(Badge, {
+              variant: 'outline',
+              className: 'hbm-badge-sm',
+              children: 'Current'
+            })
+          ]
+        }),
+        online.map(renderRow),
+        unavailable.length > 0 && jsxs('div', {
+          className: 'hbm-unavailable',
+          children: [
+            jsxs('button', {
+              type: 'button',
+              className: 'hbm-unavailable-toggle',
+              'aria-expanded': unavailableOpen,
+              'aria-controls': unavailableOpen ? unavailableId : undefined,
+              onClick: () => setUnavailableGroups(prev => ({
+                ...prev,
+                [group.connectionId]: !unavailableOpen
+              })),
+              children: [
+                jsx(Codicon, {
+                  name: unavailableOpen ? 'chevron-down' : 'chevron-right',
+                  className: 'hbm-chevron'
+                }),
+                jsx('span', { children: `Unavailable (${unavailable.length})` })
+              ]
+            }),
+            unavailableOpen && jsx('div', {
+              className: 'hbm-unavailable-list',
+              id: unavailableId,
+              children: unavailable.map(renderOfflineRow)
+            })
+          ]
+        })
+      ]
+    }, group.connectionId)
   }
 
   return jsxs('div', {
@@ -1013,6 +1187,7 @@ function ModelsPane() {
             variant: 'ghost',
             size: 'icon-xs',
             title: 'Refresh profiles',
+            'aria-label': 'Refresh profiles',
             disabled: isAnyLoading,
             onClick: () => void loadAll(scope),
             children: isAnyLoading
@@ -1049,24 +1224,7 @@ function ModelsPane() {
                 })
               : jsx('div', {
                   className: 'hbm-list',
-                  children: grouped.map(group =>
-                    jsxs(Fragment, {
-                      children: [
-                        group.label && jsxs('div', {
-                          className: 'hbm-group-hdr',
-                          children: [
-                            jsx('span', { children: group.label }),
-                            group.isCurrent && jsx(Badge, {
-                              variant: 'outline',
-                              className: 'hbm-badge-sm',
-                              children: 'Current'
-                            })
-                          ]
-                        }),
-                        group.items.map(renderRow)
-                      ]
-                    }, group.connectionId)
-                  )
+                  children: grouped.map(renderGroup)
                 })
       })
     ]
